@@ -1,6 +1,5 @@
 package com.example.mechanicservice.data.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -1,14 +1,15 @@
 package com.example.mechanicservice.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mechanicservice.data.SessionManager
 import com.example.mechanicservice.data.model.AuthResponse
 import com.example.mechanicservice.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import android.util.Log
 
 data class AuthUiState(
     val isLoading: Boolean = false,
@@ -17,17 +18,21 @@ data class AuthUiState(
     val authResponse: AuthResponse? = null
 )
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(
+    private val sessionManager: SessionManager
+) : ViewModel() {
 
     private val repository = AuthRepository()
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+
     fun login(
         email: String,
         password: String
     ) {
+
         if (email.isBlank() || password.isBlank()) {
             _uiState.value = AuthUiState(
                 errorMessage = "Email and password are required"
@@ -44,21 +49,61 @@ class AuthViewModel : ViewModel() {
             repository.login(
                 email = email.trim(),
                 password = password
-            ).onSuccess { response ->
+            )
+                .onSuccess { response ->
 
-                _uiState.value = AuthUiState(
-                    isSuccess = true,
-                    authResponse = response
-                )
+                    val accessToken = response.access_token
+                    val user = response.user
 
-            }.onFailure { error ->
+                    if (accessToken != null && user != null) {
 
-                _uiState.value = AuthUiState(
-                    errorMessage = error.message
-                        ?: "Login failed"
-                )
-                Log.d("failing","Login failed: ${error.message}")
-            }
+                        // Save session locally
+                        sessionManager.saveSession(
+                            accessToken = accessToken,
+                            refreshToken = response.refresh_token,
+                            userId = user.id
+                        )
+
+                        Log.d(
+                            "AuthViewModel",
+                            "Login successful"
+                        )
+
+                        Log.d(
+                            "AuthViewModel",
+                            "Session saved for user: ${user.id}"
+                        )
+
+                        _uiState.value = AuthUiState(
+                            isSuccess = true,
+                            authResponse = response
+                        )
+
+                    } else {
+
+                        _uiState.value = AuthUiState(
+                            errorMessage = "Invalid login response"
+                        )
+
+                        Log.e(
+                            "AuthViewModel",
+                            "Login response missing access token or user"
+                        )
+                    }
+                }
+                .onFailure { error ->
+
+                    Log.e(
+                        "AuthViewModel",
+                        "Login failed",
+                        error
+                    )
+
+                    _uiState.value = AuthUiState(
+                        errorMessage = error.message
+                            ?: "Login failed"
+                    )
+                }
         }
     }
 
@@ -66,6 +111,7 @@ class AuthViewModel : ViewModel() {
         email: String,
         password: String
     ) {
+
         if (email.isBlank() || password.isBlank()) {
             _uiState.value = AuthUiState(
                 errorMessage = "Email and password are required"
@@ -89,26 +135,50 @@ class AuthViewModel : ViewModel() {
             repository.signup(
                 email = email.trim(),
                 password = password
-            ).onSuccess { response ->
+            )
+                .onSuccess { response ->
 
-                _uiState.value = AuthUiState(
-                    isSuccess = true,
-                    authResponse = response
-                )
+                    val accessToken = response.access_token
+                    val user = response.user
 
-            }.onFailure { error ->
+                    /*
+                     * Supabase may require email confirmation.
+                     * In that case accessToken/user can be null.
+                     */
+                    if (accessToken != null && user != null) {
 
-                _uiState.value = AuthUiState(
-                    errorMessage = error.message
-                        ?: "Signup failed"
-                )
-            }
+                        sessionManager.saveSession(
+                            accessToken = accessToken,
+                            refreshToken = response.refresh_token,
+                            userId = user.id
+                        )
+
+                        Log.d(
+                            "AuthViewModel",
+                            "Signup successful and session saved"
+                        )
+                    }
+
+                    _uiState.value = AuthUiState(
+                        isSuccess = true,
+                        authResponse = response
+                    )
+                }
+                .onFailure { error ->
+
+                    Log.e(
+                        "AuthViewModel",
+                        "Signup failed",
+                        error
+                    )
+
+                    _uiState.value = AuthUiState(
+                        errorMessage = error.message
+                            ?: "Signup failed"
+                    )
+                }
         }
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(
-            errorMessage = null
-        )
-    }
+
 }

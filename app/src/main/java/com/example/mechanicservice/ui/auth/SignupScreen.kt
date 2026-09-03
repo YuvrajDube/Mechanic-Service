@@ -24,13 +24,29 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mechanicservice.viewmodel.AuthViewModel
+import androidx.compose.ui.platform.LocalContext
+import com.example.mechanicservice.MechanicServiceApplication
+import com.example.mechanicservice.viewmodel.AuthViewModelFactory
 
 @Composable
 fun SignupScreen(
     onSignupSuccess: () -> Unit,
-    onLoginClick: () -> Unit,
-    viewModel: AuthViewModel = viewModel()
+    onLoginClick: () -> Unit
 ) {
+
+    val context = LocalContext.current
+
+    val application =
+        context.applicationContext as MechanicServiceApplication
+
+    val factory = AuthViewModelFactory(
+        application.sessionManager
+    )
+
+    val viewModel: AuthViewModel = viewModel(
+        factory = factory
+    )
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var email by remember {

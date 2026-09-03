@@ -15,36 +15,50 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.mechanicservice.MechanicServiceApplication
 import com.example.mechanicservice.viewmodel.AuthViewModel
+import com.example.mechanicservice.viewmodel.AuthViewModelFactory
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    onSignupClick: () -> Unit,
-    viewModel: AuthViewModel = viewModel()
+    onSignupClick: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var email by remember {
-        mutableStateOf("")
-    }
+    val context = LocalContext.current
 
-    var password by remember {
-        mutableStateOf("")
-    }
+    val application =
+        context.applicationContext as MechanicServiceApplication
+
+    val factory = AuthViewModelFactory(
+        application.sessionManager
+    )
+
+    val viewModel: AuthViewModel = viewModel(
+        factory = factory
+    )
+
+    val uiState by viewModel.uiState
+        .collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onLoginSuccess()
         }
+    }
+
+    var email = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf("")
+    }
+
+    var password = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf("")
     }
 
     Column(
@@ -59,56 +73,75 @@ fun LoginScreen(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(
+            modifier = Modifier.height(8.dp)
+        )
+
+        Text(
+            text = "Login to find a mechanic"
+        )
+
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
 
         OutlinedTextField(
-            value = email,
+            value = email.value,
             onValueChange = {
-                email = it
+                email.value = it
             },
+            modifier = Modifier.fillMaxWidth(),
             label = {
                 Text("Email")
             },
-            modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
 
         OutlinedTextField(
-            value = password,
+            value = password.value,
             onValueChange = {
-                password = it
+                password.value = it
             },
+            modifier = Modifier.fillMaxWidth(),
             label = {
                 Text("Password")
             },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation =
+                PasswordVisualTransformation(),
+            singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
 
         if (uiState.errorMessage != null) {
+
             Text(
                 text = uiState.errorMessage!!,
                 color = MaterialTheme.colorScheme.error
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
         }
 
         Button(
             onClick = {
                 viewModel.login(
-                    email = email,
-                    password = password
+                    email = email.value,
+                    password = password.value
                 )
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !uiState.isLoading
         ) {
+
             if (uiState.isLoading) {
                 CircularProgressIndicator()
             } else {
@@ -116,7 +149,9 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
 
         Button(
             onClick = onSignupClick,
