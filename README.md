@@ -195,19 +195,19 @@ SUPABASE_KEY=YOUR_SUPABASE_ANON_KEY
 
 
   <img src="screenshots/SettingScreen.jpeg" width="250"/>
-
-
-
-  <img src="screenshots/DetailScreen.jpeg" width="250"/>
 </p>
+
 <p align="center">
+  <img src="screenshots/DetailScreen.jpeg" width="250"/>
+
+
   <img src="screenshots/RequestServiceScreen.jpeg" width="250"/>
 
 
 
   <img src="screenshots/SignUpScreen.jpeg" width="250"/>
+</p>
 
-
-
+<p align="center">
   <img src="screenshots/LoginScreen.jpeg" width="250"/>
 </p>
